@@ -1,0 +1,32 @@
+{
+  "name": "re-scrape",
+  "version": "0.1.0",
+  "description": "craigslist searcher/scraper",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/louisnk/re-scrape.git"
+  },
+  "author": "Louis Kinley",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/louisnk/re-scrape/issues"
+  },
+  "homepage": "https://github.com/louisnk/re-scrape#readme",
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "body-parser": "^1.15.2",
+    "compression": "^1.6.2",
+    "express": "^4.14.0",
+    "helmet": "^2.1.2",
+    "htmlparser": "^1.7.7",
+    "lodash": "^4.15.0",
+    "redis": "^2.6.2",
+    "request": "^2.74.0",
+    "request-promise": "^4.1.1",
+    "xml2json": "^0.10.0"
+  }
+}
