@@ -13,30 +13,14 @@ bluebird.promisifyAll(redis.Multi.prototype);
 let client = redis.createClient();
 
 let maestro = {
-	fetchRelevantListings: (params) => {
+	crawl: (params) => {
 		let query = params && params.query;
-		let city = config.city;
+		let city = (params && params.city) || config.city;
+
 		return clBO.search(query, city)
-			.then(maestro._serializeListings)
+			.then(clBO._serializeListings)
 			.catch(err => { console.error(err); process.exit(err); });
-	},
-
-
-	_serializeListings: (listings) => {
-		return _(listings).chain().filter(geoBO.isInBounds)
-			.reduce((next, current, i, list) => {
-				if (!next[current.PostingID]) {
-					next[current.PostingID] = {
-						ask: current.Ask,
-						beds: current.Bedrooms,
-						lat: current.Latitude,
-						long: current.Longitude,
-						postUrl: current.PostingURL
-					};
-				}
-				return next;
-			}, {}).value();
-	},
+	}
 };
 
 module.exports = maestro;

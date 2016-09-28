@@ -3,64 +3,85 @@
 const fs = require('fs');
 const _ = require('lodash');
 const bluebird = require('bluebird');
-const htmlparser = require('htmlparser');
+const htmlparser = require('htmlparser2');
+const jqdom = require('jqdom');
 
-let sample = fs.readFileSync(process.cwd() + '/sample.html', 'utf8');
+let sample = fs.readFileSync(process.cwd() + '/sample_rental.html', 'utf8');
 
 let testParams = {
-	price: 'price',
+	price: '.price',
+	description: '#postingbody',
+	details: '.mapAndAttrs > .attrgroup span'
 };
 
 let parserBO = {
-	_serialize: (tree, params) => {
-		let body = {};
-		let toReturn = {};
-
-		let _parse = (_chunk, _i) => {
-			let key = _chunk && _chunk.attribs && (_chunk.attribs.id || _chunk.attribs.class);
-			if (_chunk && _chunk.children && _chunk.children.length > 0) {
-				// console.log("\n \n", key + ".children", _chunk.children, "\n \n");
-				_.each(_chunk.children, (child, _j) => parseBody(child, _i, key));
-			}
+	_cleanRental: (tree) => {
+		let usableData = {
+			beds: 0,
+			baths: 0,
+			price: 0,
+			sqft: 0,
+			office: false,
+			tub: false,
+			hotTub: false,
+			remodeled: false,
+			wd: false,
+			garage: false,
+			hardwood: false,
+			basement: false,
+			nearUniv: false,
+			description: ''
 		};
 
-		let parseBody = (_tree, i, key) => {
-			if (_tree.name === 'section' ||
-				(_tree.attribs &&
-					_tree.attribs.class)) {
-					if (/(postinginfos?)|postingtitle|price|titletextonly/i.test(_tree.attribs.class)) _parse(_tree);
-					else if (/timeago/i.test(_tree.attribs.class)) console.log(_tree.attribs.children)
-				}
-				else if ('data' in _tree && key) {
-					console.log("\n \n party --", key, _tree, "\n \n");
-					toReturn[key] = _tree;
-				}
-		};
+		let detBath = tree.details.match(/\d(?=ba)/ig);
+		let descBath = tree.description.match(/\d(\.\d{1,2})?(?= ?(ba(th)?))/ig);
+		let baths = detBath && descBath
+			? (detBath[0] > descBath[0] ? descBath[0] : detBath[0])
+			: !detBath && descBath
+				? descBath[0]
+				: detBath && !descBath
+					? descBath[0]
+					: 0;
 
-		let i = _.findIndex(tree, { name: 'body' });
-		if (i > -1) body = tree[i] && tree[i].children;
+		usableData.price = tree.price.match(/\d{1,}/g);
+		usableData.price = usableData.price && parseInt(usableData.price[0]);
+		usableData.beds = tree.details.match(/\d(?=b[r(ed)])/ig);
+		usableData.beds = usableData.beds && parseInt(usableData.beds[0]);
+		usableData.baths = parseFloat(baths);
+		usableData.sqft = tree.details.match(/\d{3,5}(?=ft2)?/ig);
+		usableData.sqft = usableData.sqft && parseInt(usableData.sqft[0]);
+		usableData.office = /(office|den)/ig.test(tree.description);
+		usableData.tub = / tub/ig.test(tree.description);
+		usableData.wd = / ?(washer|(w\/d)|dryer)/ig.test(tree.description) ||
+			/ ?(washer|(w\/d)|dryer)/ig.test(tree.details);
+		usableData.remodeled = /remodeled|updated/ig.test(tree.description);
+		usableData.hardwood = /(wood|bamboo) (?=floors?)/ig.test(tree.description);
+		usableData.basement = /basement/ig.test(tree.description);
+		usableData.description = _.filter(tree.description.split(/[ \n]/ig), (val) => (val && !/[\n\*]/.test(val)));
 
-
-		if (!_.isEmpty(body)) {
-			_.each(body, parseBody);
-		}
-
-		console.log(toReturn);
+		return usableData;
 	},
 
-	getTree: (content) => {
+	getRentalDetails: (content, params) => {
 		return new Promise((resolve, reject) => {
-			let handler = new htmlparser.DefaultHandler((err, done) => {
-				if (err) { return reject(err); }
-				return resolve(done);
-			}, { verbose: false, ignoreWhitespace: true });
+			if (!content || _.isEmpty(content)) reject("No content");
 
-			let parser = new htmlparser.Parser(handler);
-			return parser.parseComplete(content);
+			let tree = {};
+
+			let $ = jqdom(content);
+			_.each(params, (selector, key) => {
+				tree[key] = $(selector).text();
+			});
+
+			return resolve(tree);
 		})
 	}
 };
 
-parserBO.getTree(sample, testParams).then(parserBO._serialize);
+parserBO.getRentalDetails(sample, testParams)
+	.then(parserBO._cleanRental)
+	.catch(err => {
+		console.log(err);
+	})
 
 module.exports = parserBO;
