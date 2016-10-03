@@ -3,20 +3,22 @@
 const fs = require('fs');
 const _ = require('lodash');
 const bluebird = require('bluebird');
-const htmlparser = require('htmlparser2');
 const jqdom = require('jqdom');
+const pyShell = require('python-shell');
 
-let sample = fs.readFileSync(process.cwd() + '/sample_rental.html', 'utf8');
+let sample = fs.readFileSync(process.cwd() + '/samples/sample_rental.html', 'utf8');
 
 let testParams = {
+	title: 'title',
 	price: '.price',
 	description: '#postingbody',
 	details: '.mapAndAttrs > .attrgroup span'
 };
 
 let parserBO = {
-	_cleanRental: (tree) => {
+	_cleanCL: (tree) => {
 		let usableData = {
+			title: '',
 			beds: 0,
 			baths: 0,
 			price: 0,
@@ -43,6 +45,7 @@ let parserBO = {
 					? descBath[0]
 					: 0;
 
+		usableData.title = _.capitalize(tree.title);
 		usableData.price = tree.price.match(/\d{1,}/g);
 		usableData.price = usableData.price && parseInt(usableData.price[0]);
 		usableData.beds = tree.details.match(/\d(?=b[r(ed)])/ig);
@@ -59,18 +62,49 @@ let parserBO = {
 		usableData.basement = /basement/ig.test(tree.description);
 		usableData.description = _.filter(tree.description.split(/[ \n]/ig), (val) => (val && !/[\n\*]/.test(val)));
 
-		return usableData;
+		// console.log(usableData);
+
+		return Promise.resolve(usableData);
 	},
 
-	getRentalDetails: (content, params) => {
+	_runPy: (data) => {
+		let options = {
+			mode: 'text',
+			scriptPath: process.cwd() + '/modules',
+			args: [JSON.stringify(data), JSON.stringify(data)]
+		};
+
+		// console.log(data);
+
+		pyShell.run('aggregate_rent.py', options, (err, res) => {
+			if (err) throw err;
+			console.log(JSON.parse(res[0]));
+		});
+
+		// var shell = new pyShell(process.cwd() + '/modules/aggregator.py');
+
+		// shell.send(data);
+
+		// shell.on('message', (message) => {
+		// 	console.log("message from python: ", message);
+		// });
+
+		// shell.end((err) => {
+		// 	if (err) console.log('error?', err); throw err;
+		// 	console.log("finished");
+		// });
+	},
+
+	getCLDetails: (content, params) => {
 		return new Promise((resolve, reject) => {
 			if (!content || _.isEmpty(content)) reject("No content");
 
 			let tree = {};
 
 			let $ = jqdom(content);
-			_.each(params, (selector, key) => {
-				tree[key] = $(selector).text();
+
+			_.each(params, (value, key) => {
+				tree[key] = $(value).text();
 			});
 
 			return resolve(tree);
@@ -78,8 +112,9 @@ let parserBO = {
 	}
 };
 
-parserBO.getRentalDetails(sample, testParams)
-	.then(parserBO._cleanRental)
+parserBO.getCLDetails(sample, testParams)
+	.then(parserBO._cleanCL)
+	.then(parserBO._runPy)
 	.catch(err => {
 		console.log(err);
 	})

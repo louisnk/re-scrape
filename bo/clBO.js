@@ -37,6 +37,10 @@ let clBO = {
 			}, {}).value();
 	},
 
+	getListing: (postUrl) => {
+
+	},
+
 	search: (query, city) => {
 		let res = JSON.stringify(require('../sample_return'));
 		return Promise.resolve(res).then(clBO._parseResponse);
