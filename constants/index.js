@@ -1,5 +1,12 @@
 module.exports = Object.freeze({
-	ESTATE_ALL: 																	'rea',
-	ESTATE_OWNER: 																'reo',
-	RENTAL: 																			'apa'
+	CL_PROP_TYPE: {
+		RENTAL: 													'apa',
+		FSBO: 														'reo',
+		FSBA: 														'reb'
+	},
+	PROP_TYPE: {
+		RENTAL: 													'RENTAL',
+		FSBA: 														'FSBA',
+		FSBO: 														'FSBO'
+	}
 });

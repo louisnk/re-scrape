@@ -4,7 +4,7 @@ const fs = require('fs');
 const _ = require('lodash');
 const jqdom = require('jqdom');
 const pyShell = require('python-shell');
-const C = require('../utils/constants');
+const C = require('../constants');
 
 let sample = fs.readFileSync(process.cwd() + '/samples/sample_rental.html', 'utf8');
 
