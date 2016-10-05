@@ -2,41 +2,52 @@ import sys, json
 
 # simple JSON echo script
 listings = sys.argv[1:]
+sums = {}
 means = {}
-totals = {}
 
 for line in listings:
 	listing = json.loads(line)
-	beds = str(listing['beds'])
-	key = beds + 'br'
-	if key not in means:
-		means[key] = {
+	brKey = str(listing['beds']) + 'br'
+	baKey = str(listing['baths']) + 'ba'
+
+	if brKey not in sums:
+		sums[brKey] = {}
+
+	if baKey not in sums[brKey]:
+		sums[brKey][baKey] = {
 			'rent': listing['price'],
 			'count': 1,
 			'pft2': float(listing['price']) / listing['sqft'],
 			'sqft': listing['sqft']
 		}
 	else:
-		means[key]['rent'] = means[key]['rent'] + listing['price']
-		means[key]['sqft'] = means[key]['sqft'] + listing['sqft']
-		means[key]['pft2'] = means[key]['pft2'] + (float(listing['price']) / listing['sqft'])
-		means[key]['count'] = means[key]['count'] + 1
+		sums[brKey][baKey]['rent'] = sums[brKey][baKey]['rent'] + listing['price']
+		sums[brKey][baKey]['sqft'] = sums[brKey][baKey]['sqft'] + listing['sqft']
+		sums[brKey][baKey]['pft2'] = sums[brKey][baKey]['pft2'] + (float(listing['price']) / listing['sqft'])
+		sums[brKey][baKey]['count'] = sums[brKey][baKey]['count'] + 1
 
 	# print json.dumps(json.loads(line))
 
-for key, val in means.iteritems():
-	if key not in totals:
-		totals[key] = {
-			'meanRent': means[key]['rent'] / means[key]['count'],
-			'meanRPB': (means[key]['rent'] / means[key]['count']) / int(key[0]),
-			'meanPft2': float(means[key]['pft2']) / means[key]['count'],
-			'meanSqft': means[key]['sqft'] / means[key]['count'],
-			'count': means[key]['count']
-		}
-	else:
-		totals[key]['meanRent'] = means[key]['rent'] / means[key]['count']
-		totals[key]['meanPft2'] = float(means[key]['pft2']) / means[key]['count']
-		totals[key]['meanSqft'] = means[key]['sqft'] / means[key]['count']
-		totals[key]['count'] = means[key]['count']
 
-print json.dumps(totals)
+for key, val in sums.iteritems():
+	if key not in means:
+		means[key] = {}
+
+	if len(sums[key]) > 0:
+		for mKey, mVal in sums[key].iteritems():
+			# print mVal
+			if mKey not in means[key]:
+				means[key][mKey] = {
+					'meanRent': sums[key][mKey]['rent'] / sums[key][mKey]['count'],
+					'meanPft2': float(sums[key][mKey]['pft2']) / sums[key][mKey]['count'],
+					'meanSqft': sums[key][mKey]['sqft'] / sums[key][mKey]['count'],
+					'count': sums[key][mKey]['count']
+				}
+
+			else:
+				means[key][mKey]['meanRent'] = sums[key][mKey]['rent'] / sums[key][mKey]['count']
+				means[key][mKey]['meanPft2'] = float(sums[key][mKey]['pft2']) / sums[key][mKey]['count']
+				means[key][mKey]['meanSqft'] = sums[key][mKey]['sqft'] / sums[key][mKey]['count']
+				means[key][mKey]['count'] = sums[key][mKey]['count']
+
+print json.dumps(means)

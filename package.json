@@ -24,10 +24,12 @@
     "helmet": "^2.1.2",
     "jqdom": "0.0.5",
     "lodash": "^4.15.0",
+    "pg-promise": "^5.3.4",
     "python-shell": "^0.4.0",
     "redis": "^2.6.2",
     "request": "^2.74.0",
     "request-promise": "^4.1.1",
-    "xml2json": "^0.10.0"
+    "xml2json": "^0.10.0",
+    "zmq": "^2.15.3"
   }
 }

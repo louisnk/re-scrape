@@ -5,10 +5,8 @@ const validate = require('../utils/validation');
 
 
 // apis
-// auth
+router.get('/api/scrape/craigslist', api.scrape.craigslist);
 
-// candidate data
-router.get('/api/candidate/:uuid/profile', jwtCheck, validate.clientAuth, api.candidates.getProfileDataByUUID);
 
 // default to the welcome page
 router.get('*', function(req, res, next) {
